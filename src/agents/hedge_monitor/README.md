@@ -23,11 +23,12 @@ The orchestrator that runs all subagents, collects their outputs, and makes AI-p
    - Monitors portfolio value changes
    - Identifies overexposure to single assets
 
-2. **Derivatives Monitor** (`derivatives_monitor_subagent.py`)
-   - Tracks Open Interest changes (via Moon Dev API)
+2. **Derivatives Monitor** (`derivatives_monitor_subagent.py` / `derivatives_monitor_subagent_public.py`)
+   - Tracks Open Interest changes (Moon Dev API or free Binance/Bybit APIs)
    - Monitors Funding Rates across markets
    - Detects liquidation cascades
    - Identifies derivatives market stress signals
+   - **NEW**: Public API version available (no Moon Dev API required!)
 
 3. **Options Monitor** (`options_monitor_subagent.py`)
    - Tracks options max pain values (Deribit)
@@ -40,8 +41,23 @@ The orchestrator that runs all subagents, collects their outputs, and makes AI-p
    - Monitors large position changes
    - Detects accumulation vs distribution patterns
    - Uses Moon Dev API whale addresses
+   - *(Requires Moon Dev API)*
 
-5. **Macro Monitor** (`macro_monitor_subagent.py`)
+5. **Whale Tracker** (`whale_tracker_subagent.py`) **NEW! 🐋**
+   - On-chain whale wallet monitoring via Etherscan & Solscan APIs
+   - Tracks accumulation vs distribution patterns
+   - Monitors large wallet transactions
+   - Detects net flow changes (buying pressure vs selling pressure)
+   - Works with FREE tier APIs (no Moon Dev API required)
+
+6. **Order Blocks Monitor** (`orderblocks_monitor_subagent.py`) **NEW! 📦**
+   - Tracks institutional order blocks from TradingLite
+   - Identifies key support/resistance levels
+   - Monitors price proximity to order blocks
+   - Uses Selenium web scraping (no TradingLite API required)
+   - Optional TradingLite account login for enhanced data
+
+7. **Macro Monitor** (`macro_monitor_subagent.py`)
    - Tracks M2 money supply (FRED API)
    - Monitors FED balance sheet (QE/QT)
    - Tracks bank reserves
@@ -63,15 +79,30 @@ The hedge monitor requires `fredapi` for macro economic data monitoring.
 Add these to your `.env` file:
 
 ```env
-# Required
-MOONDEV_API_KEY=your_key_here        # For derivatives, liquidations, whale data
-ANTHROPIC_KEY=your_key_here           # For AI decision making
-BIRDEYE_API_KEY=your_key_here        # For portfolio token prices
+# Core APIs
+ANTHROPIC_KEY=your_key_here           # For AI decision making (REQUIRED)
+BIRDEYE_API_KEY=your_key_here        # For portfolio token prices (REQUIRED)
+
+# Trading Data (Choose ONE)
+MOONDEV_API_KEY=your_key_here        # Premium: derivatives, liquidations, whale data
+                                      # OR use FREE public APIs (Binance, Bybit) - no key needed!
 
 # Optional but Recommended
-FRED_API_KEY=your_key_here           # For macro monitoring
-                                      # Get free at: https://fred.stlouisfed.org/docs/api/api_key.html
+FRED_API_KEY=your_key_here           # For macro monitoring (FREE)
+                                      # Get at: https://fred.stlouisfed.org/docs/api/api_key.html
+
+ETHERSCAN_API_KEY=your_key_here      # For on-chain whale tracking (FREE)
+                                      # Get at: https://etherscan.io/apis
+
+SOLSCAN_API_KEY=your_key_here        # For Solana whale tracking (FREE)
+                                      # Get at: https://public-api.solscan.io/
+
+# Optional
+TRADINGLITE_EMAIL=your_email         # For TradingLite login (optional)
+TRADINGLITE_PASSWORD=your_password   # Enables order blocks scraping
 ```
+
+**Note**: The system now works **without** Moon Dev API! See `SETUP_NO_MOONDEV.md` for details.
 
 ### 3. Configure Settings
 
@@ -96,7 +127,7 @@ python src/agents/hedge_agent.py
 ```
 
 This will:
-1. Run all 5 monitoring subagents
+1. Run all 7 monitoring subagents
 2. Collect and analyze their outputs
 3. Consult AI for hedge recommendations
 4. Display actionable insights
@@ -110,14 +141,21 @@ Each subagent can run independently for testing:
 # Portfolio monitoring
 python src/agents/hedge_monitor/portfolio_monitor_subagent.py
 
-# Derivatives monitoring
-python src/agents/hedge_monitor/derivatives_monitor_subagent.py
+# Derivatives monitoring (choose one based on API availability)
+python src/agents/hedge_monitor/derivatives_monitor_subagent.py          # Moon Dev API version
+python src/agents/hedge_monitor/derivatives_monitor_subagent_public.py   # Free public API version
 
 # Options monitoring
 python src/agents/hedge_monitor/options_monitor_subagent.py
 
-# Market maker monitoring
+# Market maker monitoring (requires Moon Dev API)
 python src/agents/hedge_monitor/marketmaker_monitor_subagent.py
+
+# On-chain whale tracking (NEW!)
+python src/agents/hedge_monitor/whale_tracker_subagent.py
+
+# Order blocks monitoring (NEW!)
+python src/agents/hedge_monitor/orderblocks_monitor_subagent.py
 
 # Macro monitoring
 python src/agents/hedge_monitor/macro_monitor_subagent.py
@@ -130,7 +168,9 @@ The Hedge Agent uses advanced AI (Claude, GPT-4, DeepSeek, etc.) to analyze:
 - **Portfolio Risk**: Concentration, drawdowns, position sizes
 - **Derivatives Signals**: OI changes, funding rate extremes, liquidations
 - **Options Positioning**: Max pain divergence, expiry magnets
-- **Whale Activity**: Accumulation/distribution patterns
+- **Market Maker Activity**: Whale wallet positioning (Moon Dev API)
+- **On-Chain Whales**: Accumulation/distribution via Etherscan & Solscan
+- **Order Blocks**: Institutional support/resistance levels from TradingLite
 - **Macro Context**: QE/QT, interest rates, money supply
 
 ### Decision Outputs
@@ -157,13 +197,21 @@ src/data/hedge_monitor/
 │   └── portfolio_history.csv
 ├── derivatives/
 │   ├── funding_history.csv
+│   ├── funding_history_public.csv      # Public API version
 │   ├── oi_history.csv
-│   └── liquidation_history.csv
+│   ├── oi_history_public.csv           # Public API version
+│   ├── liquidation_history.csv
+│   └── liquidation_history_public.csv  # Public API version
 ├── options/
 │   └── options_history.csv
 ├── marketmaker/
 │   ├── whale_activity_history.csv
 │   └── whale_addresses.txt
+├── whale_tracker/                       # NEW!
+│   ├── whale_history.csv
+│   └── whale_addresses.json
+├── order_blocks/                        # NEW!
+│   └── orderblocks_history.csv
 └── macro/
     └── macro_history.csv
 ```
@@ -195,7 +243,7 @@ To enable actual trade execution:
 ║                   🛡️  HEDGE AGENT CYCLE  🛡️                ║
 ╚════════════════════════════════════════════════════════════╝
 
-[1/5] 💼 Portfolio Monitor
+[1/7] 💼 Portfolio Monitor
 ╔════════════════════════════════════════════════════════════╗
 ║            🌙 Portfolio Monitor Summary 💼                 ║
 ╠════════════════════════════════════════════════════════════╣
@@ -207,7 +255,7 @@ To enable actual trade execution:
 ║  Risk Level: 🟡 MEDIUM - Moderately concentrated          ║
 ╚════════════════════════════════════════════════════════════╝
 
-[2/5] 📊 Derivatives Monitor
+[2/7] 📊 Derivatives Monitor (Public API)
 ╔════════════════════════════════════════════════════════════╗
 ║         🌙 Derivatives Monitor Summary 📊                  ║
 ╠════════════════════════════════════════════════════════════╣
@@ -272,9 +320,22 @@ if ACTIVE_AGENTS.get('hedge'):
 - Verify you have USDC or tracked tokens in wallet
 
 ### "Derivatives data unavailable"
-- Check MOONDEV_API_KEY is valid
-- Verify API key has proper permissions
-- Check rate limits (100 requests/minute)
+- If using Moon Dev API: Check MOONDEV_API_KEY is valid
+- If using public APIs: System auto-falls back to Binance/Bybit (no key needed)
+- Check network connectivity
+- Verify API rate limits
+
+### "Selenium not installed" (Order Blocks Monitor)
+- Install Selenium: `pip install selenium webdriver-manager`
+- Or install ChromeDriver manually for your system
+- System will use mock data if Selenium unavailable
+- TradingLite credentials are optional (enhances data access)
+
+### "Whale tracking unavailable"
+- Get free Etherscan API key: https://etherscan.io/apis
+- Get free Solscan API key: https://public-api.solscan.io/
+- Add to `.env`: `ETHERSCAN_API_KEY=your_key_here`
+- System gracefully skips if keys not available
 
 ## Advanced Configuration
 
@@ -305,16 +366,23 @@ HEDGE_AI_MODEL_PROVIDER = 'anthropic'  # Reliable, good reasoning
 
 ## Performance & Cost
 
-- **Runtime**: ~2-3 minutes per full cycle (all 5 subagents)
+- **Runtime**: ~3-5 minutes per full cycle (all 7 subagents)
 - **API Costs**:
   - FRED API: Free
   - Deribit API: Free (public endpoints)
-  - Moon Dev API: Paid (required)
+  - Binance/Bybit API: Free (no key required)
+  - Etherscan API: Free tier available
+  - Solscan API: Free tier available
+  - Moon Dev API: Paid (optional - can use free alternatives)
   - AI Inference: ~$0.01-0.05 per decision (varies by provider)
-- **Data Storage**: ~10-50 MB over 30 days
+- **Data Storage**: ~20-80 MB over 30 days
+- **Selenium**: Adds ~10-15 seconds for order blocks scraping
 
 ## Roadmap
 
+- [x] ~~On-chain whale tracking~~ **COMPLETED** ✅
+- [x] ~~TradingLite order blocks monitoring~~ **COMPLETED** ✅
+- [x] ~~Public API support (no Moon Dev API required)~~ **COMPLETED** ✅
 - [ ] Add DeFi protocol risk monitoring
 - [ ] Integration with TradingView alerts
 - [ ] Discord/Telegram notifications

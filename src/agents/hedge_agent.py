@@ -30,6 +30,8 @@ from src.agents.base_agent import BaseAgent
 from src.agents.hedge_monitor.portfolio_monitor_subagent import PortfolioMonitorSubagent
 from src.agents.hedge_monitor.macro_monitor_subagent import MacroMonitorSubagent
 from src.agents.hedge_monitor.options_monitor_subagent import OptionsMonitorSubagent
+from src.agents.hedge_monitor.whale_tracker_subagent import OnChainWhaleTracker
+from src.agents.hedge_monitor.orderblocks_monitor_subagent import OrderBlocksMonitor
 
 # Check if Moon Dev API key is available
 USE_MOONDEV_API = os.getenv('MOONDEV_API_KEY') is not None
@@ -69,6 +71,12 @@ Your job is to analyze comprehensive market data and decide if the user needs to
 
 ### Market Maker Activity:
 {marketmaker_summary}
+
+### Whale Activity:
+{whale_summary}
+
+### Order Blocks:
+{orderblocks_summary}
 
 ### Macroeconomic Context:
 {macro_summary}
@@ -122,6 +130,8 @@ class HedgeAgent(BaseAgent):
             self.derivatives_monitor = DerivativesMonitorSubagent()
             self.macro_monitor = MacroMonitorSubagent()
             self.options_monitor = OptionsMonitorSubagent()
+            self.whale_tracker = OnChainWhaleTracker()
+            self.orderblocks_monitor = OrderBlocksMonitor()
 
             # Market maker monitor only if Moon Dev API is available
             if MarketMakerMonitorSubagent is not None:
@@ -164,7 +174,7 @@ class HedgeAgent(BaseAgent):
 
         # Run portfolio monitor
         try:
-            print("\n[1/5] 💼 Portfolio Monitor")
+            print("\n[1/7] 💼 Portfolio Monitor")
             results['portfolio'] = self.portfolio_monitor.run()
         except Exception as e:
             print(f"❌ Portfolio monitor error: {str(e)}")
@@ -172,7 +182,7 @@ class HedgeAgent(BaseAgent):
 
         # Run derivatives monitor
         try:
-            print("\n[2/5] 📊 Derivatives Monitor")
+            print("\n[2/7] 📊 Derivatives Monitor")
             results['derivatives'] = self.derivatives_monitor.run()
         except Exception as e:
             print(f"❌ Derivatives monitor error: {str(e)}")
@@ -180,7 +190,7 @@ class HedgeAgent(BaseAgent):
 
         # Run options monitor
         try:
-            print("\n[3/5] 📈 Options Monitor")
+            print("\n[3/7] 📈 Options Monitor")
             results['options'] = self.options_monitor.run()
         except Exception as e:
             print(f"❌ Options monitor error: {str(e)}")
@@ -189,18 +199,34 @@ class HedgeAgent(BaseAgent):
         # Run market maker monitor (if available)
         if self.marketmaker_monitor is not None:
             try:
-                print("\n[4/5] 🐋 Market Maker Monitor")
+                print("\n[4/7] 🐋 Market Maker Monitor (Moon Dev API)")
                 results['marketmaker'] = self.marketmaker_monitor.run()
             except Exception as e:
                 print(f"❌ Market maker monitor error: {str(e)}")
                 results['marketmaker'] = None
         else:
-            print("\n[4/5] 🐋 Market Maker Monitor - SKIPPED (Moon Dev API required)")
+            print("\n[4/7] 🐋 Market Maker Monitor - SKIPPED (Moon Dev API required)")
             results['marketmaker'] = None
+
+        # Run whale tracker
+        try:
+            print("\n[5/7] 🐋 Whale Tracker (On-Chain)")
+            results['whale'] = self.whale_tracker.run()
+        except Exception as e:
+            print(f"❌ Whale tracker error: {str(e)}")
+            results['whale'] = None
+
+        # Run order blocks monitor
+        try:
+            print("\n[6/7] 📦 Order Blocks Monitor")
+            results['orderblocks'] = self.orderblocks_monitor.run()
+        except Exception as e:
+            print(f"❌ Order blocks monitor error: {str(e)}")
+            results['orderblocks'] = None
 
         # Run macro monitor
         try:
-            print("\n[5/5] 🌍 Macro Monitor")
+            print("\n[7/7] 🌍 Macro Monitor")
             results['macro'] = self.macro_monitor.run()
         except Exception as e:
             print(f"❌ Macro monitor error: {str(e)}")
@@ -270,7 +296,43 @@ Signals: {len(analysis.get('signals', []))}
             else:
                 summaries['marketmaker'] = "Market maker data unavailable"
         else:
-            summaries['marketmaker'] = "Market maker monitoring unavailable"
+            summaries['marketmaker'] = "Market maker monitoring unavailable (Moon Dev API)"
+
+        # Whale tracker summary
+        if monitor_results.get('whale'):
+            w = monitor_results['whale']
+            signals = w.get('signals', [])
+            if signals:
+                signal_msgs = '\n'.join([f"- {s['message']}" for s in signals[:5]])
+                summaries['whale'] = f"{len(signals)} whale signal(s) detected:\n{signal_msgs}"
+            else:
+                whale_data = w.get('whale_data')
+                if whale_data is not None and not whale_data.empty:
+                    acc = len(whale_data[whale_data['signal'] == 'ACCUMULATION'])
+                    dist = len(whale_data[whale_data['signal'] == 'DISTRIBUTION'])
+                    summaries['whale'] = f"Tracking {len(whale_data)} whales: {acc} accumulating, {dist} distributing"
+                else:
+                    summaries['whale'] = "Whale tracking available but no activity detected"
+        else:
+            summaries['whale'] = "Whale tracking unavailable (needs Etherscan API key)"
+
+        # Order blocks summary
+        if monitor_results.get('orderblocks'):
+            ob = monitor_results['orderblocks']
+            signals = ob.get('signals', [])
+            if signals:
+                signal_msgs = '\n'.join([f"- {s['message']}" for s in signals[:5]])
+                summaries['orderblocks'] = f"{len(signals)} order block signal(s):\n{signal_msgs}"
+            else:
+                ob_data = ob.get('orderblocks')
+                if ob_data is not None and not ob_data.empty:
+                    supports = len(ob_data[ob_data['type'] == 'SUPPORT'])
+                    resistances = len(ob_data[ob_data['type'] == 'RESISTANCE'])
+                    summaries['orderblocks'] = f"Tracking {supports} support and {resistances} resistance order blocks"
+                else:
+                    summaries['orderblocks'] = "Order blocks available but no significant levels"
+        else:
+            summaries['orderblocks'] = "Order blocks monitoring unavailable"
 
         # Macro summary
         if monitor_results.get('macro'):
@@ -303,6 +365,8 @@ Risks: {len(m.get('risks', []))}
                 derivatives_summary=summaries.get('derivatives', 'N/A'),
                 options_summary=summaries.get('options', 'N/A'),
                 marketmaker_summary=summaries.get('marketmaker', 'N/A'),
+                whale_summary=summaries.get('whale', 'N/A'),
+                orderblocks_summary=summaries.get('orderblocks', 'N/A'),
                 macro_summary=summaries.get('macro', 'N/A')
             )
 
