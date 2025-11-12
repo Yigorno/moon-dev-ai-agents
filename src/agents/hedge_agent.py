@@ -28,10 +28,21 @@ from src.agents.base_agent import BaseAgent
 
 # Import all subagents
 from src.agents.hedge_monitor.portfolio_monitor_subagent import PortfolioMonitorSubagent
-from src.agents.hedge_monitor.derivatives_monitor_subagent import DerivativesMonitorSubagent
 from src.agents.hedge_monitor.macro_monitor_subagent import MacroMonitorSubagent
-from src.agents.hedge_monitor.marketmaker_monitor_subagent import MarketMakerMonitorSubagent
 from src.agents.hedge_monitor.options_monitor_subagent import OptionsMonitorSubagent
+
+# Check if Moon Dev API key is available
+USE_MOONDEV_API = os.getenv('MOONDEV_API_KEY') is not None
+
+if USE_MOONDEV_API:
+    print("💎 Moon Dev API detected - using premium data sources")
+    from src.agents.hedge_monitor.derivatives_monitor_subagent import DerivativesMonitorSubagent
+    from src.agents.hedge_monitor.marketmaker_monitor_subagent import MarketMakerMonitorSubagent
+else:
+    print("🌐 No Moon Dev API - using free public data sources (Binance, Bybit, etc.)")
+    from src.agents.hedge_monitor.derivatives_monitor_subagent_public import DerivativesMonitorSubagentPublic as DerivativesMonitorSubagent
+    # Market maker monitor is optional if no Moon Dev API
+    MarketMakerMonitorSubagent = None
 
 # Get the project root directory
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -110,9 +121,16 @@ class HedgeAgent(BaseAgent):
             self.portfolio_monitor = PortfolioMonitorSubagent()
             self.derivatives_monitor = DerivativesMonitorSubagent()
             self.macro_monitor = MacroMonitorSubagent()
-            self.marketmaker_monitor = MarketMakerMonitorSubagent()
             self.options_monitor = OptionsMonitorSubagent()
-            print("✅ All subagents initialized successfully!")
+
+            # Market maker monitor only if Moon Dev API is available
+            if MarketMakerMonitorSubagent is not None:
+                self.marketmaker_monitor = MarketMakerMonitorSubagent()
+            else:
+                self.marketmaker_monitor = None
+                print("⚠️ Market maker monitor disabled (requires Moon Dev API)")
+
+            print("✅ All available subagents initialized successfully!")
         except Exception as e:
             print(f"⚠️ Warning during subagent initialization: {str(e)}")
             traceback.print_exc()
@@ -168,12 +186,16 @@ class HedgeAgent(BaseAgent):
             print(f"❌ Options monitor error: {str(e)}")
             results['options'] = None
 
-        # Run market maker monitor
-        try:
-            print("\n[4/5] 🐋 Market Maker Monitor")
-            results['marketmaker'] = self.marketmaker_monitor.run()
-        except Exception as e:
-            print(f"❌ Market maker monitor error: {str(e)}")
+        # Run market maker monitor (if available)
+        if self.marketmaker_monitor is not None:
+            try:
+                print("\n[4/5] 🐋 Market Maker Monitor")
+                results['marketmaker'] = self.marketmaker_monitor.run()
+            except Exception as e:
+                print(f"❌ Market maker monitor error: {str(e)}")
+                results['marketmaker'] = None
+        else:
+            print("\n[4/5] 🐋 Market Maker Monitor - SKIPPED (Moon Dev API required)")
             results['marketmaker'] = None
 
         # Run macro monitor
