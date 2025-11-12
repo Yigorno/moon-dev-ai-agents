@@ -470,3 +470,6 @@ yfinance==0.2.43
 youtube-transcript-api==1.2.3
 yt-dlp==2025.1.26
 zipp==3.19.2
+fredapi==0.5.2
+selenium==4.27.1
+webdriver-manager==4.0.2

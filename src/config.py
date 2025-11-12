@@ -123,6 +123,17 @@ REALTIME_CLIPS_AI_MODEL = 'groq'  # Model type: groq, openai, claude, deepseek, 
 REALTIME_CLIPS_AI_MODEL_NAME = None  # None = use default for model type
 REALTIME_CLIPS_TWITTER = True  # Auto-open Twitter compose after clip
 
+# Hedge Monitor Agent Settings 🛡️
+HEDGE_MONITOR_ENABLED = False  # Set to True to enable hedge monitoring
+HEDGE_CHECK_INTERVAL_MINUTES = 30  # How often to run comprehensive hedge analysis
+HEDGE_AI_MODEL_PROVIDER = 'anthropic'  # AI provider for hedge decisions: anthropic, openai, deepseek, groq
+HEDGE_AUTO_EXECUTE = False  # Set to True to auto-execute hedge trades (USE WITH CAUTION!)
+HEDGE_MAX_POSITION_PCT = 50  # Maximum % of portfolio to use for hedging
+
+# Optional API Keys for Hedge Monitor
+# FRED_API_KEY - Get free key at https://fred.stlouisfed.org/docs/api/api_key.html
+# This enables macro monitoring (M2, Fed Balance Sheet, Bank Reserves)
+
 # Future variables (not active yet) 🔮
 sell_at_multiple = 3
 USDC_SIZE = 1
