@@ -15,6 +15,9 @@ class OllamaModel(BaseModel):
     
     # Available Ollama models - can be expanded based on what's installed locally
     AVAILABLE_MODELS = [
+        "qwen3:14b-q4_K_M", # Qwen 3 14B quantized - main model for trading strategies
+        "deepseek-r1:8b",   # DeepSeek-R1-0528 for the 8 billion parameter distilled model
+        "codellama:latest"  #fast local AI for coding tasks
         "deepseek-r1",      # DeepSeek R1 through Ollama (7B by default)
         "qwen3:8b",         # Qwen 3 8B model - fast reasoning model
         "gemma:2b",         # Google's Gemma 2B model
@@ -107,11 +110,11 @@ class OllamaModel(BaseModel):
                 }
             }
             
-            # Make the request with 90 second timeout
+            # Make the request with 900 second timeout (15 minutes for reasoning models like DeepSeek R1)
             response = requests.post(
                 f"{self.base_url}/chat",
                 json=data,
-                timeout=90  # Match swarm timeout
+                timeout=900  # Increased for DeepSeek R1 reasoning model
             )
             
             if response.status_code == 200:

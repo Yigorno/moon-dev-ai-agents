@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 🌙 Moon Dev's RBI AI v3.0 PARALLEL PROCESSOR + MULTI-DATA TESTING 🚀
 Built with love by Moon Dev 🚀
@@ -38,6 +39,18 @@ Required Setup:
 IMPORTANT: Each thread is fully independent and won't interfere with others!
 """
 
+# Fix Windows console encoding for emoji/unicode support
+import sys
+import io
+if sys.platform == 'win32':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except AttributeError:
+        # Python < 3.7
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 # Import execution functionality
 import subprocess
 import json
@@ -67,11 +80,11 @@ print("✅ Environment variables loaded")
 
 # Add config values directly to avoid import issues
 AI_TEMPERATURE = 0.7
-AI_MAX_TOKENS = 16000  # 🌙 Moon Dev: Increased for complete backtest code generation with execution block!
+AI_MAX_TOKENS = 8000  # 🌙 Moon Dev: Set to 8000 for DeepSeek compatibility (max 8192)
 
 # Import model factory with proper path handling
 import sys
-sys.path.append('/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading')
+sys.path.append(r"G:\Drive'ım\Moondev_AI_agents\moon-dev-ai-agents")
 
 try:
     from src.models import model_factory
@@ -83,7 +96,7 @@ except ImportError as e:
 # ============================================
 # 🎯 PARALLEL PROCESSING CONFIGURATION
 # ============================================
-MAX_PARALLEL_THREADS = 18  # How many ideas to process simultaneously
+MAX_PARALLEL_THREADS = 4  # How many ideas to process simultaneously
 RATE_LIMIT_DELAY = .5  # Seconds to wait between API calls (per thread)
 RATE_LIMIT_GLOBAL_DELAY = 0.5  # Global delay between any API calls
 
@@ -102,7 +115,7 @@ RATE_LIMIT_GLOBAL_DELAY = 0.5  # Global delay between any API calls
 #   - Perfect for auto-generated strategies from web search agent!
 #
 STRATEGIES_FROM_FILES = False  # Set to True to read from folder instead of ideas.txt
-STRATEGIES_FOLDER = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/web_search_research/final_strategies"
+STRATEGIES_FOLDER = r"G:\Drive'ım\Moondev_AI_agents\moon-dev-ai-agents\src\data\web_search_research\final_strategies"
 
 # Thread color mapping
 THREAD_COLORS = {
@@ -134,40 +147,40 @@ rate_limiter = Semaphore(MAX_PARALLEL_THREADS)
 # - GLM: z-ai/glm-4.6
 # See src/models/openrouter_model.py for ALL available models!
 
-# 🧠 RESEARCH: Grok 4 Fast Reasoning (xAI's blazing fast model!)
+# 🧠 RESEARCH: Deepseek for quick process and cheap 
 RESEARCH_CONFIG = {
-    "type": "xai",
-    "name": "grok-4-fast-reasoning"
+    "type": "deepseek",
+    "name": "deepseek-reasoner"
 }
 
-# 💻 BACKTEST CODE GEN: Grok 4 Fast Reasoning (xAI's blazing fast model!)
+# 💻 BACKTEST CODE GEN: Deepseek for quick process and cheap
 BACKTEST_CONFIG = {
-    "type": "xai",
-    "name": "grok-4-fast-reasoning"
+    "type": "deepseek",
+    "name": "deepseek-reasoner"
 }
 
-# 🐛 DEBUGGING: Grok 4 Fast Reasoning (xAI's blazing fast model!)
+# 🐛 DEBUGGING: Deepseek for quick process and cheap
 DEBUG_CONFIG = {
-    "type": "xai",
-    "name": "grok-4-fast-reasoning"
+    "type": "deepseek",
+    "name": "deepseek-coder"
 }
 
-# 📦 PACKAGE CHECK: Grok 4 Fast Reasoning (xAI's blazing fast model!)
+# 📦 PACKAGE CHECK: Deepseek for quick process and cheap
 PACKAGE_CONFIG = {
-    "type": "xai",
-    "name": "grok-4-fast-reasoning"
+    "type": "deepseek",
+    "name": "deepseek-coder"
 }
 
-# 🚀 OPTIMIZATION: Grok 4 Fast Reasoning (xAI's blazing fast model!)
+# 🚀 OPTIMIZATION: Deepseek for quick process and cheap
 OPTIMIZE_CONFIG = {
-    "type": "xai",
-    "name": "grok-4-fast-reasoning"
+    "type": "deepseek",
+    "name": "deepseek-reasoner"
 }
 
 # 🎯 PROFIT TARGET CONFIGURATION
 TARGET_RETURN = 50  # Target return in %
 SAVE_IF_OVER_RETURN = 1.0  # Save backtest to CSV and folders if return > this % (Moon Dev's threshold!)
-CONDA_ENV = "tflow"
+CONDA_ENV = "algotrader"
 MAX_DEBUG_ITERATIONS = 10
 MAX_OPTIMIZATION_ITERATIONS = 10
 EXECUTION_TIMEOUT = 300  # 5 minutes
@@ -507,7 +520,7 @@ RISK MANAGEMENT:
 
 If you need indicators use TA lib or pandas TA.
 
-Use this data path: /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv
+Use this data path: G:/Drive'ım/Moondev_AI_agents/moon-dev-ai-agents/src/data/rbi/BTC-USD-15m.csv
 the above data head looks like below
 datetime, open, high, low, close, volume,
 2023-01-01 00:00:00, 16531.83, 16532.69, 16509.11, 16510.82, 231.05338022,
@@ -533,7 +546,7 @@ if __name__ == "__main__":
 
     # FIRST: Run standard backtest and print stats (REQUIRED for parsing!)
     print("\\n🌙 Running initial backtest for stats extraction...")
-    data = pd.read_csv('/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv')
+    data = pd.read_csv('G:/Drive\\'ım/Moondev_AI_agents/moon-dev-ai-agents/src/data/rbi/BTC-USD-15m.csv')
     data['datetime'] = pd.to_datetime(data['datetime'])
     data = data.set_index('datetime')
     data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
@@ -971,13 +984,13 @@ def save_backtest_if_threshold_met(code: str, stats: dict, strategy_name: str, i
         # Save to WORKING folder
         working_file = WORKING_BACKTEST_DIR / filename
         with file_lock:
-            with open(working_file, 'w') as f:
+            with open(working_file, 'w', encoding='utf-8') as f:
                 f.write(code)
 
         # Save to FINAL folder (same logic per Moon Dev's request)
         final_file = FINAL_BACKTEST_DIR / filename
         with file_lock:
-            with open(final_file, 'w') as f:
+            with open(final_file, 'w', encoding='utf-8') as f:
                 f.write(code)
 
         thread_print(f"💾 Saved to working & final! Return: {return_pct:.2f}%", thread_id, "green", attrs=['bold'])
@@ -1026,7 +1039,7 @@ def execute_backtest(file_path: str, strategy_name: str, thread_id: int) -> dict
     # Save execution results with thread ID
     result_file = EXECUTION_DIR / f"T{thread_id:02d}_{strategy_name}_{datetime.now().strftime('%H%M%S')}.json"
     with file_lock:
-        with open(result_file, 'w') as f:
+        with open(result_file, 'w', encoding='utf-8') as f:
             json.dump(output, f, indent=2)
 
     if output['success']:
@@ -1067,12 +1080,12 @@ def log_processed_idea(idea: str, strategy_name: str, thread_id: int) -> None:
     with file_lock:
         if not PROCESSED_IDEAS_LOG.exists():
             PROCESSED_IDEAS_LOG.parent.mkdir(parents=True, exist_ok=True)
-            with open(PROCESSED_IDEAS_LOG, 'w') as f:
+            with open(PROCESSED_IDEAS_LOG, 'w', encoding='utf-8') as f:
                 f.write("# Moon Dev's RBI AI - Processed Ideas Log 🌙\n")
                 f.write("# Format: hash,timestamp,thread_id,strategy_name,idea_snippet\n")
 
         idea_snippet = idea[:50].replace(',', ';') + ('...' if len(idea) > 50 else '')
-        with open(PROCESSED_IDEAS_LOG, 'a') as f:
+        with open(PROCESSED_IDEAS_LOG, 'a', encoding='utf-8') as f:
             f.write(f"{idea_hash},{timestamp},T{thread_id:02d},{strategy_name},{idea_snippet}\n")
 
     thread_print(f"📝 Logged processed idea: {strategy_name}", thread_id, "green")
@@ -1215,7 +1228,7 @@ def research_strategy(content, thread_id):
         # Add thread ID to filename
         filepath = RESEARCH_DIR / f"T{thread_id:02d}_{strategy_name}_strategy.txt"
         with file_lock:
-            with open(filepath, 'w') as f:
+            with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(output)
 
         return output, strategy_name
@@ -1237,7 +1250,7 @@ def create_backtest(strategy, strategy_name, thread_id):
 
         filepath = BACKTEST_DIR / f"T{thread_id:02d}_{strategy_name}_BT.py"
         with file_lock:
-            with open(filepath, 'w') as f:
+            with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(output)
 
         thread_print(f"🔥 Backtest code saved", thread_id, "green")
@@ -1260,7 +1273,7 @@ def package_check(backtest_code, strategy_name, thread_id):
 
         filepath = PACKAGE_DIR / f"T{thread_id:02d}_{strategy_name}_PKG.py"
         with file_lock:
-            with open(filepath, 'w') as f:
+            with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(output)
 
         thread_print(f"📦 Package check complete", thread_id, "green")
@@ -1287,7 +1300,7 @@ def debug_backtest(backtest_code, error_message, strategy_name, thread_id, itera
         # Only threshold-passing backtests go to FINAL/WORKING folders!
         filepath = BACKTEST_DIR / f"T{thread_id:02d}_{strategy_name}_DEBUG_v{iteration}.py"
         with file_lock:
-            with open(filepath, 'w') as f:
+            with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(output)
 
         thread_print(f"🔧 Debug iteration {iteration} complete", thread_id, "green")
@@ -1315,7 +1328,7 @@ def optimize_strategy(backtest_code, current_return, target_return, strategy_nam
 
         filepath = OPTIMIZATION_DIR / f"T{thread_id:02d}_{strategy_name}_OPT_v{iteration}.py"
         with file_lock:
-            with open(filepath, 'w') as f:
+            with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(output)
 
         thread_print(f"🎯 Optimization {iteration} complete", thread_id, "green")
@@ -1415,7 +1428,7 @@ def process_trading_idea_parallel(idea: str, thread_id: int) -> dict:
                         thread_print("⚠️ Could not parse return", thread_id, "yellow")
                         final_file = FINAL_BACKTEST_DIR / f"T{thread_id:02d}_{strategy_name}_BTFinal_WORKING.py"
                         with file_lock:
-                            with open(final_file, 'w') as f:
+                            with open(final_file, 'w', encoding='utf-8') as f:
                                 f.write(current_code)
                         break
 
@@ -1446,7 +1459,7 @@ def process_trading_idea_parallel(idea: str, thread_id: int) -> dict:
                         # 🌙 Moon Dev: Save to OPTIMIZATION_DIR for target hits
                         final_file = OPTIMIZATION_DIR / f"T{thread_id:02d}_{strategy_name}_TARGET_HIT_{current_return}pct.py"
                         with file_lock:
-                            with open(final_file, 'w') as f:
+                            with open(final_file, 'w', encoding='utf-8') as f:
                                 f.write(current_code)
 
                         return {
@@ -1528,7 +1541,7 @@ def process_trading_idea_parallel(idea: str, thread_id: int) -> dict:
 
                                     final_file = OPTIMIZATION_DIR / f"T{thread_id:02d}_{strategy_name}_TARGET_HIT_{new_return}pct.py"
                                     with file_lock:
-                                        with open(final_file, 'w') as f:
+                                        with open(final_file, 'w', encoding='utf-8') as f:
                                             f.write(best_code)
 
                                     return {
@@ -1545,7 +1558,7 @@ def process_trading_idea_parallel(idea: str, thread_id: int) -> dict:
 
                         best_file = OPTIMIZATION_DIR / f"T{thread_id:02d}_{strategy_name}_BEST_{best_return}pct.py"
                         with file_lock:
-                            with open(best_file, 'w') as f:
+                            with open(best_file, 'w', encoding='utf-8') as f:
                                 f.write(best_code)
 
                         return {
@@ -1753,7 +1766,7 @@ def main(ideas_file_path=None, run_name=None):
     if not IDEAS_FILE.exists():
         cprint(f"❌ ideas.txt not found! Creating template...", "red")
         IDEAS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(IDEAS_FILE, 'w') as f:
+        with open(IDEAS_FILE, 'w', encoding='utf-8') as f:
             f.write("# Add your trading ideas here (one per line)\n")
             f.write("# Can be YouTube URLs, PDF links, or text descriptions\n")
             f.write("# Lines starting with # are ignored\n\n")

@@ -53,7 +53,7 @@ import textwrap
 
 # Import model factory from RBI agent
 import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(r"G:\Drive'ım\Moondev_AI_agents\moon-dev-ai-agents")
 from src.models import model_factory
 
 # Define paths
@@ -66,6 +66,8 @@ IDEAS_CSV = DATA_DIR / "strategy_ideas.csv"
 MODELS = [
     # {"type": "ollama", "name": "DeepSeek-R1:latest"},
     # {"type": "ollama", "name": "llama3.2:latest"},
+    # {"type": "ollama", "name": "qwen3:14b-q4_K_M"},
+    {"type": "ollama", "name": "deepseek-r1:8b"},
     # {"type": "ollama", "name": "gemma:2b"}
     {"type": "deepseek", "name": "deepseek-chat"},
     {"type": "deepseek", "name": "deepseek-reasoner"}
