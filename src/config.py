@@ -134,6 +134,27 @@ HEDGE_MAX_POSITION_PCT = 50  # Maximum % of portfolio to use for hedging
 # FRED_API_KEY - Get free key at https://fred.stlouisfed.org/docs/api/api_key.html
 # This enables macro monitoring (M2, Fed Balance Sheet, Bank Reserves)
 
+# SMC Trading Agent Settings 📊
+SMC_TRADING_ENABLED = True  # Set to True to enable SMC trading agent
+SMC_PAPER_TRADING = True  # True = paper trading only, False = live trades (USE WITH CAUTION!)
+SMC_EXCHANGE = 'ASTER'  # Options: 'ASTER', 'HYPERLIQUID', 'SOLANA'
+SMC_POSITION_SIZE_PCT = 30  # % of balance to use per position (0-100)
+SMC_LEVERAGE = 5  # Leverage for Aster/HyperLiquid (1-125x)
+SMC_STOP_LOSS_PCT = 5.0  # Stop loss percentage
+SMC_TAKE_PROFIT_PCT = 10.0  # Take profit percentage
+SMC_MIN_CONFIDENCE = 70  # Minimum confidence to execute trade (0-100)
+SMC_DECISION_METHOD = 'LLM'  # Options: 'LLM', 'SCORING', 'HYBRID'
+SMC_AI_MODEL_PROVIDER = 'anthropic'  # AI provider: anthropic, openai, deepseek, groq, ollama
+SMC_OHLCV_TIMEFRAME = '15m'  # Timeframe for OHLCV analysis: 1m, 5m, 15m, 1H, etc.
+SMC_OHLCV_DAYS_BACK = 3  # Days of historical OHLCV data
+SMC_LIQUIDATION_LIMIT = 10000  # Number of liquidation records to analyze
+
+# SMC Analysis Parameters
+SMC_SWING_WINDOW = 5  # Window size for swing high/low detection
+SMC_OB_VOLUME_MULTIPLIER = 1.5  # Volume multiplier for order block detection
+SMC_OB_LOOKBACK = 20  # Lookback period for order block analysis
+SMC_FVG_MIN_GAP_PCT = 0.5  # Minimum gap percentage for FVG detection
+
 # Future variables (not active yet) 🔮
 sell_at_multiple = 3
 USDC_SIZE = 1
