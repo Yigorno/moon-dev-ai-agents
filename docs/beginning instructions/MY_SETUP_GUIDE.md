@@ -156,9 +156,9 @@ OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:14b-q4_k_m
 
 # Fallbacks
-DEEPSEEK_KEY=sk-8d8e112d20fd4fbdb9e388f49aca484c
+DEEPSEEK_KEY=your_key_here
 OPENAI_KEY=your_key_here
-ANTHROPIC_KEY=sk-ant-api03-...
+ANTHROPIC_KEY=your_key_here
 ```
 
 Then in agent code:
