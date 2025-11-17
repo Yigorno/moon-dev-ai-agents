@@ -33,6 +33,7 @@ import AppKit
 import subprocess
 import base64
 from src.models import model_factory  # Import Moon Dev's model factory
+from src import config
 import traceback
 from Cocoa import NSURL
 import time
@@ -545,7 +546,7 @@ def capture_composer_screenshot():
             cprint(f"\n📸 Screenshot attempt {attempt + 1}/{MAX_SCREENSHOT_RETRIES}...", "cyan")
             
             # Use the correct screenshots directory path
-            screenshot_dir = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/code_runner/screenshots")
+            screenshot_dir = config.get_agent_data_dir("code_runner") / "screenshots"
             cprint(f"\n📁 Using screenshot directory: {screenshot_dir}", "cyan")
             screenshot_dir.mkdir(parents=True, exist_ok=True)
             

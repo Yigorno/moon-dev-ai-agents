@@ -10,6 +10,7 @@ future ideas
 """
 
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 import elevenlabs
@@ -19,9 +20,14 @@ import random
 import subprocess
 import math
 
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+from src import config
+
 # Text Input Settings
 USE_TEXT_FILE = True  # Whether to use input text file by default
-INPUT_TEXT_FILE = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/tweets/generated_tweets_20250127_092231.txt"
+INPUT_TEXT_FILE = config.DATA_DIR / "tweets" / "generated_tweets_20250127_092231.txt"
 
 # Processing Settings
 PLAY_AUDIO = False  # Whether to play audio after generation (slower if True)
@@ -33,12 +39,13 @@ MODEL_ID = "eleven_multilingual_v2"  # Default model
 OUTPUT_FORMAT = "mp3_44100_128"  # High quality audio
 
 # Video Settings
-RAW_VIDS_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos/raw_vids")
-FINAL_VIDS_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos")
+VIDEOS_BASE_DIR = config.DATA_DIR / "videos"
+RAW_VIDS_DIR = VIDEOS_BASE_DIR / "raw_vids"
+FINAL_VIDS_DIR = VIDEOS_BASE_DIR
 SUPPORTED_VIDEO_FORMATS = ['.mp4', '.mov', '.avi', '.mkv']
 
 # Output Settings
-AUDIO_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos/audio")
+AUDIO_DIR = VIDEOS_BASE_DIR / "audio"
 
 class VideoAgent:
     """Moon Dev's Video Agent 🎬"""

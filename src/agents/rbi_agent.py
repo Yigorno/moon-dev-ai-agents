@@ -235,9 +235,9 @@ RISK MANAGEMENT:
 2. Use proper stop loss and take profit calculations
 4. Print entry/exit signals with Moon Dev themed messages
 
-If you need indicators use TA lib or pandas TA. 
+If you need indicators use TA lib or pandas TA.
 
-Use this data path: /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv
+Use this data path: src/data/rbi/BTC-USD-15m.csv (relative to project root)
 the above data head looks like below
 datetime, open, high, low, close, volume,
 2023-01-01 00:00:00, 16531.83, 16532.69, 16509.11, 16510.82, 231.05338022,

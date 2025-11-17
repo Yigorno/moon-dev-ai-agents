@@ -19,7 +19,7 @@ MAX_CHUNK_SIZE = 10000  # Maximum characters per chunk
 TWEETS_PER_CHUNK = 3   # Number of tweets to generate per chunk
 USE_TEXT_FILE = True   # Whether to use og_tweet_text.txt by default
 # if the above is true, then the below is the file to use
-OG_TWEET_FILE = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/tweets/og_tweet_text.txt"
+# Note: config will be imported later in the file, so we'll set this dynamically
 
 import os
 import pandas as pd
@@ -124,7 +124,7 @@ class TweetAgent:
             self.deepseek_client = None
         
         # Create tweets directory if it doesn't exist
-        self.tweets_dir = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/tweets")
+        self.tweets_dir = config.get_agent_data_dir("tweets")
         self.tweets_dir.mkdir(parents=True, exist_ok=True)
         
         # Generate output filename with timestamp
@@ -140,12 +140,13 @@ class TweetAgent:
         """Get input text from either file or direct input"""
         if USE_TEXT_FILE:
             try:
-                with open(OG_TWEET_FILE, 'r') as f:
+                og_tweet_file = self.tweets_dir / "og_tweet_text.txt"
+                with open(og_tweet_file, 'r') as f:
                     return f.read()
             except Exception as e:
                 print(f"❌ Error reading text file: {str(e)}")
                 print("⚠️ Falling back to direct text input if provided")
-                
+
         return text
     
     def _print_colored_tweet(self, tweet, color_idx):

@@ -198,7 +198,7 @@ class FocusAgent:
         self.current_transcript = []
         
         # Add data directory path
-        self.data_dir = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data")
+        self.data_dir = DATA_DIR
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.focus_log_path = self.data_dir / "focus_history.csv"
         

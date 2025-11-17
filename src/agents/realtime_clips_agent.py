@@ -19,8 +19,9 @@ AUTONOMOUS = True
 # TWITTER AUTO-POST: Set to True to open Twitter compose with title after each clip
 TWITTER = True
 
-# OBS Recording Folder
-OBS_FOLDER = '/Volumes/Moon 26/OBS'
+# OBS Recording Folder (set via OBS_FOLDER environment variable or use default)
+# Note: Update this path to match your OBS recording location
+OBS_FOLDER = os.getenv('OBS_FOLDER', '/Volumes/Moon 26/OBS')
 
 # Clips Output Folder (will be created in src/data/)
 CLIPS_BASE_FOLDER = 'realtime_clips'
@@ -143,6 +144,11 @@ import time
 import threading
 import webbrowser
 from urllib.parse import quote
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+from src import config
 
 # Add project root to path for imports
 sys.path.append(str(Path(__file__).parent.parent.parent))

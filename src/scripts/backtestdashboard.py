@@ -43,15 +43,17 @@ import subprocess
 import threading
 from datetime import datetime
 import sys
+import os
 import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import traceback
 import logging
 
-# Import MoonDevAPI from this project
+# Import MoonDevAPI and config from this project
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from agents.api import MoonDevAPI
+from config import DATA_DIR, PROJECT_ROOT
 import websockets
 import json
 
@@ -62,11 +64,11 @@ import json
 # 📊 Path to your backtest stats CSV file
 # This CSV is created by rbi_agent_pp_multi.py after running backtests
 # Default: src/data/rbi_pp_multi/backtest_stats.csv
-STATS_CSV = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi_pp_multi/backtest_stats.csv")
+STATS_CSV = DATA_DIR / "rbi_pp_multi" / "backtest_stats.csv"
 
 # 📁 Directory for static files (CSS, JS) and templates (HTML)
 # These files are located in: src/data/rbi_pp_multi/static and src/data/rbi_pp_multi/templates
-TEMPLATE_BASE_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi_pp_multi")
+TEMPLATE_BASE_DIR = DATA_DIR / "rbi_pp_multi"
 
 # 🗂️ Directory to store user-created folders
 # Folders allow you to organize and group your backtest results
@@ -77,23 +79,27 @@ TARGET_RETURN = 50  # % - Optimization goal
 SAVE_IF_OVER_RETURN = 1.0  # % - Minimum return to save to CSV
 
 # 📊 Data Portal Configuration - Moon Dev
-DATA_DIR = TEMPLATE_BASE_DIR / "downloads"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+DOWNLOADS_DIR = TEMPLATE_BASE_DIR / "downloads"
+DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 # 📊 Test Data Sets Directory - Historical datasets for backtesting
-TEST_DATA_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/private_data")
+TEST_DATA_DIR = DATA_DIR / "private_data"
 
 # TEST MODE for data portal - Set to True for fast testing with sample data
 TEST_MODE = True
 
-# 🎯 Polymarket CSV Paths
-POLYMARKET_SWEEPS_CSV = Path("/Users/md/Dropbox/dev/github/Polymarket-Trading-Bots/data/sweeps_database.csv")
-POLYMARKET_EXPIRING_CSV = Path("/Users/md/Dropbox/dev/github/Polymarket-Trading-Bots/data/expiring_markets.csv")
+# 🎯 Polymarket CSV Paths (configure via environment variables or place in data/polymarket/)
+# Note: Set POLYMARKET_DATA_DIR environment variable if you have the Polymarket-Trading-Bots repo
+POLYMARKET_DATA_DIR = Path(os.getenv('POLYMARKET_DATA_DIR', str(DATA_DIR / 'polymarket')))
+POLYMARKET_SWEEPS_CSV = POLYMARKET_DATA_DIR / "sweeps_database.csv"
+POLYMARKET_EXPIRING_CSV = POLYMARKET_DATA_DIR / "expiring_markets.csv"
 
-# 🎯 Liquidation CSV Paths
-LIQUIDATIONS_MINI_CSV = Path("/Users/md/Dropbox/dev/github/Untitled/binance_trades_mini.csv")
-LIQUIDATIONS_BIG_CSV = Path("/Users/md/Dropbox/dev/github/Untitled/binance_trades.csv")
-LIQUIDATIONS_GRAND_CSV = Path("/Users/md/Dropbox/dev/github/Untitled/binance.csv")
+# 🎯 Liquidation CSV Paths (configure via environment variables or place in data/liquidations/)
+# Note: Set LIQUIDATIONS_DATA_DIR environment variable if you have liquidation data elsewhere
+LIQUIDATIONS_DATA_DIR = Path(os.getenv('LIQUIDATIONS_DATA_DIR', str(DATA_DIR / 'liquidations')))
+LIQUIDATIONS_MINI_CSV = LIQUIDATIONS_DATA_DIR / "binance_trades_mini.csv"
+LIQUIDATIONS_BIG_CSV = LIQUIDATIONS_DATA_DIR / "binance_trades.csv"
+LIQUIDATIONS_GRAND_CSV = LIQUIDATIONS_DATA_DIR / "binance.csv"
 
 # ============================================================================
 # 🚀 FASTAPI APP INITIALIZATION

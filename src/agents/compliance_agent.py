@@ -40,7 +40,8 @@ MODEL_CONFIG = {
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "src" / "data" / "compliance"
 GUIDELINES_PATH = DATA_DIR / "fb_guidelines.txt"
-VIDEOS_DIR = Path("/Users/md/Dropbox/dev/github/search-arbitrage/bots/compliance/tiktok_ads")
+# Note: Set COMPLIANCE_VIDEOS_DIR environment variable or place videos in data/compliance/videos
+VIDEOS_DIR = Path(os.getenv('COMPLIANCE_VIDEOS_DIR', str(DATA_DIR / "videos")))
 OUTPUT_DIR = DATA_DIR / "analysis"
 FRAMES_DIR = OUTPUT_DIR / "frames"
 TRANSCRIPTS_DIR = OUTPUT_DIR / "transcripts"

@@ -63,7 +63,10 @@ AI_MAX_TOKENS = 4000
 
 # Import model factory with proper path handling
 import sys
-sys.path.append('/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading')
+import os
+# Add project root to path (get parent directory of src/)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(project_root))
 
 try:
     from src.models import model_factory
@@ -240,9 +243,9 @@ RISK MANAGEMENT:
 2. Use proper stop loss and take profit calculations
 4. Print entry/exit signals with Moon Dev themed messages
 
-If you need indicators use TA lib or pandas TA. 
+If you need indicators use TA lib or pandas TA.
 
-Use this data path: /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv
+Use this data path: src/data/rbi/BTC-USD-15m.csv (relative to project root)
 the above data head looks like below
 datetime, open, high, low, close, volume,
 2023-01-01 00:00:00, 16531.83, 16532.69, 16509.11, 16510.82, 231.05338022,
@@ -261,7 +264,10 @@ if __name__ == "__main__":
     import os
 
     # Import the multi-data tester from Moon Dev's trading bots repo
-    sys.path.append('/Users/md/Dropbox/dev/github/moon-dev-trading-bots/backtests')
+    # Note: This requires the moon-dev-trading-bots repo to be available
+    # Set the path via MOON_DEV_TRADING_BOTS_PATH environment variable if needed
+    trading_bots_path = os.getenv('MOON_DEV_TRADING_BOTS_PATH', '../moon-dev-trading-bots/backtests')
+    sys.path.append(trading_bots_path)
     from multi_data_tester import test_on_all_data
 
     print("\\n" + "="*80)

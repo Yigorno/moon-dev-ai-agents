@@ -6,12 +6,18 @@ Proof of concept for running backtests in conda environment
 import subprocess
 import sys
 import os
+import sys
 import json
 from datetime import datetime
 from pathlib import Path
 
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+from src import config
+
 # CONFIGURATION - Change this to test different files
-BACKTEST_FILE = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/agents/test_backtest_working.py"
+BACKTEST_FILE = str(config.SRC_DIR / "agents" / "test_backtest_working.py")
 CONDA_ENV = "tflow"  # Your conda environment name
 
 def run_backtest_in_conda(file_path: str, conda_env: str = "tflow"):

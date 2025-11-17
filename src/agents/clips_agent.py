@@ -84,6 +84,7 @@ import random
 from youtube_transcript_api import YouTubeTranscriptApi
 import re
 from src.models import model_factory
+from src import config
 import yt_dlp
 import openai
 from moviepy.editor import VideoFileClip, AudioFileClip, CompositeVideoClip
@@ -131,11 +132,12 @@ YOU MUST USE THE TRANSCRIPT ABOVE TO WRITE THE INTRO, MAKE SURE THAT IT IS ON TO
 RAW TEXT ONLY. NO MARKDOWN. NO QUOTES. NO ANALYSIS. NO THINKING. JUST THE INTRO.
 """
 
-# Constants for directories
-INPUT_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos/raw_streams")
-OUTPUT_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos/finished_clips")
-TEMP_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos/temp")
-YOUTUBE_MATERIALS_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos/youtube_materials")
+# Constants for directories (using relative paths from project root)
+VIDEOS_BASE_DIR = config.DATA_DIR / "videos"
+INPUT_DIR = VIDEOS_BASE_DIR / "raw_streams"
+OUTPUT_DIR = VIDEOS_BASE_DIR / "finished_clips"
+TEMP_DIR = VIDEOS_BASE_DIR / "temp"
+YOUTUBE_MATERIALS_DIR = VIDEOS_BASE_DIR / "youtube_materials"
 
 class ClipsAgent:
     def __init__(self):

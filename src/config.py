@@ -3,6 +3,22 @@
 Built with love by Moon Dev 🚀
 """
 
+import os
+from pathlib import Path
+
+# 🗂️ Project Path Configuration
+# Get the project root directory (parent of src/)
+PROJECT_ROOT = Path(__file__).parent.parent.absolute()
+SRC_DIR = PROJECT_ROOT / "src"
+DATA_DIR = SRC_DIR / "data"
+
+# Helper function to get data directory for an agent
+def get_agent_data_dir(agent_name):
+    """Get the data directory for a specific agent"""
+    agent_dir = DATA_DIR / agent_name
+    agent_dir.mkdir(parents=True, exist_ok=True)
+    return agent_dir
+
 # 🔄 Exchange Selection
 EXCHANGE = 'solana'  # Options: 'solana', 'hyperliquid'
 
@@ -116,7 +132,7 @@ MIN_TRADES_LAST_HOUR = 2
 
 # Real-Time Clips Agent Settings 🎬
 REALTIME_CLIPS_ENABLED = True
-REALTIME_CLIPS_OBS_FOLDER = '/Volumes/Moon 26/OBS'  # Your OBS recording folder
+REALTIME_CLIPS_OBS_FOLDER = os.getenv('OBS_FOLDER', str(DATA_DIR / 'videos' / 'obs_recordings'))  # Your OBS recording folder (set via OBS_FOLDER env var)
 REALTIME_CLIPS_AUTO_INTERVAL = 120  # Check every N seconds (120 = 2 minutes)
 REALTIME_CLIPS_LENGTH = 2  # Minutes to analyze per check
 REALTIME_CLIPS_AI_MODEL = 'groq'  # Model type: groq, openai, claude, deepseek, xai, ollama

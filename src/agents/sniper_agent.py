@@ -25,6 +25,7 @@ import logging
 from rich.console import Console
 from rich import print as rprint
 from playsound import playsound
+from src import config
 
 # Suppress INFO logs
 logging.getLogger().setLevel(logging.WARNING)
@@ -66,13 +67,17 @@ LAUNCH_EMOJIS = [
     "💥", "🌪️", "⚡", "☄️", "🌠", "🎇", "🎆", "✨", "💫", "⭐",  # Energy & explosions
 ]
 
-# Sound effects paths
+# Sound effects paths (using relative paths from project root)
+# Note: Create a 'sounds' directory in src/data/ and add your sound files there
+SOUNDS_DIR = config.DATA_DIR / "sounds"
 SOUND_EFFECTS = [
-    "/Users/md/Dropbox/dev/github/Untitled/sounds/pownew.MP3",
-    "/Users/md/Dropbox/dev/github/Untitled/sounds/Shining.wav",
-    "/Users/md/Dropbox/dev/github/Untitled/sounds/final_fant1.MP3",
-    "/Users/md/Dropbox/dev/github/Untitled/sounds/final_fant2.MP3"
+    str(SOUNDS_DIR / "pownew.MP3"),
+    str(SOUNDS_DIR / "Shining.wav"),
+    str(SOUNDS_DIR / "final_fant1.MP3"),
+    str(SOUNDS_DIR / "final_fant2.MP3")
 ]
+# Filter to only existing sound files
+SOUND_EFFECTS = [s for s in SOUND_EFFECTS if Path(s).exists()]
 
 class TokenScanner:
     def __init__(self):
