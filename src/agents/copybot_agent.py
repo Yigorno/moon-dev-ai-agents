@@ -18,12 +18,19 @@ from termcolor import colored, cprint
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import time
+from pathlib import Path
 from src.config import *
 from src import nice_funcs as n
 from src.data.ohlcv_collector import collect_all_tokens, collect_token_data
 
-# Data path for current copybot portfolio
-COPYBOT_PORTFOLIO_PATH = '/Users/md/Dropbox/dev/github/solana-copy-trader/csvs/current_portfolio.csv'
+# Data path for current copybot portfolio - uses config setting or fallback to data directory
+# You can configure this in config.py or it will use the default data directory
+if COPYBOT_PORTFOLIO_PATH and Path(COPYBOT_PORTFOLIO_PATH).exists():
+    _PORTFOLIO_PATH = COPYBOT_PORTFOLIO_PATH
+else:
+    # Use project data directory as fallback
+    PROJECT_ROOT = Path(__file__).parent.parent.parent
+    _PORTFOLIO_PATH = PROJECT_ROOT / 'src' / 'data' / 'copybot' / 'current_portfolio.csv'
 
 # LLM Prompts
 PORTFOLIO_ANALYSIS_PROMPT = """
@@ -68,18 +75,39 @@ class CopyBotAgent:
     def __init__(self):
         """Initialize the CopyBot agent with LLM"""
         load_dotenv()
-        self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_KEY"))
+
+        # Check for API key
+        api_key = os.getenv("ANTHROPIC_KEY")
+        if not api_key:
+            print("⚠️ WARNING: ANTHROPIC_KEY not found in environment")
+            print("   CopyBot agent will not be able to analyze positions")
+            print("   Please add ANTHROPIC_KEY to your .env file")
+            self.client = None
+        else:
+            self.client = anthropic.Anthropic(api_key=api_key)
+
         self.recommendations_df = pd.DataFrame(columns=['token', 'action', 'confidence', 'reasoning'])
+        self.portfolio_path = _PORTFOLIO_PATH
+
+        # Ensure data directory exists
+        self.portfolio_path.parent.mkdir(parents=True, exist_ok=True)
+
         print("🤖 Moon Dev's CopyBot Agent initialized!")
+        print(f"📁 Portfolio path: {self.portfolio_path}")
         
     def load_portfolio_data(self):
         """Load current copybot portfolio data"""
         try:
-            if not os.path.exists(COPYBOT_PORTFOLIO_PATH):
-                print(f"❌ Portfolio file not found: {COPYBOT_PORTFOLIO_PATH}")
+            if not self.portfolio_path.exists():
+                print(f"❌ Portfolio file not found: {self.portfolio_path}")
+                print("   Please either:")
+                print("   1. Set COPYBOT_PORTFOLIO_PATH in config.py to your portfolio CSV file")
+                print("   2. Place your portfolio CSV at the default location:")
+                print(f"      {self.portfolio_path}")
+                print("   3. Use the copybot API to fetch portfolio data (see Moon Dev API)")
                 return False
-                
-            self.portfolio_df = pd.read_csv(COPYBOT_PORTFOLIO_PATH)
+
+            self.portfolio_df = pd.read_csv(self.portfolio_path)
             print("💼 Current copybot portfolio loaded!")
             print(self.portfolio_df)
             return True
@@ -90,16 +118,21 @@ class CopyBotAgent:
     def analyze_position(self, token):
         """Analyze a single portfolio position"""
         try:
+            # Check if client is available
+            if not self.client:
+                print("❌ Cannot analyze position: Anthropic API client not initialized")
+                return None
+
             if token in EXCLUDED_TOKENS:
                 print(f"⚠️ Skipping analysis for excluded token: {token}")
                 return None
-                
+
             # Get position data
             position_data = self.portfolio_df[self.portfolio_df['Mint Address'] == token]
             if position_data.empty:
                 print(f"⚠️ No portfolio data for token: {token}")
                 return None
-                
+
             print(f"\n🔍 Analyzing position for {position_data['name'].values[0]}...")
             print(f"💰 Current Amount: {position_data['Amount'].values[0]}")
             print(f"💵 USD Value: ${position_data['USD Value'].values[0]:.2f}")

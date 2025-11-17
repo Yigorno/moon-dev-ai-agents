@@ -81,29 +81,52 @@ class RiskAgent(BaseAgent):
                 print(f"  - Max Tokens: {AI_MAX_TOKENS}")
                 
         load_dotenv()
-        
+
         # Get API keys
         openai_key = os.getenv("OPENAI_KEY")
         anthropic_key = os.getenv("ANTHROPIC_KEY")
         deepseek_key = os.getenv("DEEPSEEK_KEY")
-        
-        if not openai_key:
-            raise ValueError("🚨 OPENAI_KEY not found in environment variables!")
-        if not anthropic_key:
-            raise ValueError("🚨 ANTHROPIC_KEY not found in environment variables!")
-            
-        # Initialize OpenAI client for DeepSeek
-        if deepseek_key and MODEL_OVERRIDE.lower() == "deepseek-chat":
-            self.deepseek_client = openai.OpenAI(
-                api_key=deepseek_key,
-                base_url=DEEPSEEK_BASE_URL
-            )
-            print("🚀 DeepSeek model initialized!")
+
+        # Initialize clients with graceful error handling
+        self.client = None
+        self.deepseek_client = None
+
+        # Try to initialize Anthropic client
+        if anthropic_key:
+            try:
+                self.client = anthropic.Anthropic(api_key=anthropic_key)
+                print("✅ Anthropic client initialized successfully!")
+            except Exception as e:
+                cprint(f"❌ Failed to initialize Anthropic client: {e}", "red")
+                cprint("   Please verify your ANTHROPIC_KEY is valid", "yellow")
+                self.client = None
         else:
-            self.deepseek_client = None
-            
-        # Initialize Anthropic client
-        self.client = anthropic.Anthropic(api_key=anthropic_key)
+            cprint("⚠️ ANTHROPIC_KEY not found in .env file", "yellow")
+            cprint("   Risk Agent will not be able to use Claude models", "yellow")
+
+        # Try to initialize DeepSeek client if configured
+        if MODEL_OVERRIDE.lower() == "deepseek-chat":
+            if deepseek_key:
+                try:
+                    self.deepseek_client = openai.OpenAI(
+                        api_key=deepseek_key,
+                        base_url=DEEPSEEK_BASE_URL
+                    )
+                    print("✅ DeepSeek model initialized!")
+                except Exception as e:
+                    cprint(f"❌ Failed to initialize DeepSeek client: {e}", "red")
+                    cprint("   Please verify your DEEPSEEK_KEY is valid", "yellow")
+                    self.deepseek_client = None
+            else:
+                cprint("⚠️ DEEPSEEK_KEY not found in .env file", "yellow")
+                cprint("   MODEL_OVERRIDE is set to deepseek-chat but no API key available", "yellow")
+                self.deepseek_client = None
+
+        # Check if we have at least one working client
+        if not self.client and not self.deepseek_client:
+            cprint("❌ WARNING: No API clients initialized successfully!", "red")
+            cprint("   Risk Agent needs either ANTHROPIC_KEY or DEEPSEEK_KEY", "yellow")
+            cprint("   Add them to your .env file to enable risk management", "yellow")
         
         self.override_active = False
         self.last_override_check = None
@@ -233,8 +256,14 @@ class RiskAgent(BaseAgent):
     def should_override_limit(self, limit_type):
         """Ask AI if we should override the limit based on recent market data"""
         try:
+            # Check if we have AI clients available
+            if not self.client and not self.deepseek_client:
+                cprint("❌ Cannot check risk override - no AI clients initialized", "red")
+                cprint("   Please add ANTHROPIC_KEY or DEEPSEEK_KEY to your .env", "yellow")
+                return False
+
             # Only check every 15 minutes
-            if (self.last_override_check and 
+            if (self.last_override_check and
                 datetime.now() - self.last_override_check < timedelta(minutes=15)):
                 return self.override_active
             
@@ -457,6 +486,13 @@ class RiskAgent(BaseAgent):
             if not USE_AI_CONFIRMATION:
                 print(f"\n🚨 {breach_type} limit breached! Closing all positions immediately...")
                 print(f"💡 (AI confirmation disabled in config)")
+                self.close_all_positions()
+                return
+
+            # Check if we have AI clients available
+            if not self.client and not self.deepseek_client:
+                cprint("⚠️ No AI clients available for breach consultation", "yellow")
+                cprint("   Defaulting to close all positions for safety", "red")
                 self.close_all_positions()
                 return
                 

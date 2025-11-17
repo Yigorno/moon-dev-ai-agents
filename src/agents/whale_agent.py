@@ -94,34 +94,66 @@ class WhaleAgent(BaseAgent):
                 print(f"  - Max Tokens: {AI_MAX_TOKENS}")
         
         load_dotenv()
-        
+
         # Get API keys
         openai_key = os.getenv("OPENAI_KEY")
         anthropic_key = os.getenv("ANTHROPIC_KEY")
-        
-        if not openai_key:
-            raise ValueError("🚨 OPENAI_KEY not found in environment variables!")
-        if not anthropic_key:
-            raise ValueError("🚨 ANTHROPIC_KEY not found in environment variables!")
-            
-        openai.api_key = openai_key
-        self.client = anthropic.Anthropic(api_key=anthropic_key)
+        deepseek_key = os.getenv("DEEPSEEK_KEY")
 
-        # Initialize DeepSeek client if needed
-        if "deepseek" in self.ai_model.lower():
-            deepseek_key = os.getenv("DEEPSEEK_KEY")
-            if deepseek_key:
-                self.deepseek_client = openai.OpenAI(
-                    api_key=deepseek_key,
-                    base_url=DEEPSEEK_BASE_URL
-                )
-                print("🚀 Moon Dev's Whale Agent using DeepSeek override!")
-            else:
-                self.deepseek_client = None
-                print("⚠️ DEEPSEEK_KEY not found - DeepSeek model will not be available")
+        # Initialize clients with graceful error handling
+        self.client = None
+        self.deepseek_client = None
+
+        # Try to initialize OpenAI client (for voice/audio features)
+        if openai_key:
+            try:
+                openai.api_key = openai_key
+                print("✅ OpenAI client initialized successfully!")
+            except Exception as e:
+                cprint(f"❌ Failed to initialize OpenAI client: {e}", "red")
+                cprint("   Please verify your OPENAI_KEY is valid", "yellow")
         else:
-            self.deepseek_client = None
+            cprint("⚠️ OPENAI_KEY not found in .env file", "yellow")
+            cprint("   Voice announcements will not work", "yellow")
+
+        # Try to initialize Anthropic client
+        if anthropic_key:
+            try:
+                self.client = anthropic.Anthropic(api_key=anthropic_key)
+                print("✅ Anthropic client initialized successfully!")
+            except Exception as e:
+                cprint(f"❌ Failed to initialize Anthropic client: {e}", "red")
+                cprint("   Please verify your ANTHROPIC_KEY is valid", "yellow")
+                self.client = None
+        else:
+            cprint("⚠️ ANTHROPIC_KEY not found in .env file", "yellow")
+            cprint("   Whale Agent will not be able to use Claude models", "yellow")
+
+        # Try to initialize DeepSeek client if configured
+        if "deepseek" in self.ai_model.lower():
+            if deepseek_key:
+                try:
+                    self.deepseek_client = openai.OpenAI(
+                        api_key=deepseek_key,
+                        base_url=DEEPSEEK_BASE_URL
+                    )
+                    print("🚀 Moon Dev's Whale Agent using DeepSeek override!")
+                except Exception as e:
+                    cprint(f"❌ Failed to initialize DeepSeek client: {e}", "red")
+                    cprint("   Please verify your DEEPSEEK_KEY is valid", "yellow")
+                    self.deepseek_client = None
+            else:
+                cprint("⚠️ DEEPSEEK_KEY not found in .env file", "yellow")
+                cprint("   ai_model is set to deepseek but no API key available", "yellow")
+                self.deepseek_client = None
+        else:
             print(f"🎯 Moon Dev's Whale Agent using Claude model: {self.ai_model}!")
+
+        # Check if we have at least one working AI client
+        if not self.client and not self.deepseek_client:
+            cprint("❌ WARNING: No AI clients initialized successfully!", "red")
+            cprint("   Whale Agent needs either ANTHROPIC_KEY or DEEPSEEK_KEY", "yellow")
+            cprint("   Add them to your .env file to enable whale analysis", "yellow")
         
         # Initialize Moon Dev API with correct base URL
         self.api = MoonDevAPI(base_url="http://api.moondev.com:8000")
@@ -373,6 +405,11 @@ class WhaleAgent(BaseAgent):
     def _analyze_opportunity(self, changes, market_data):
         """Get AI analysis of the whale movement"""
         try:
+            # Check if we have AI clients available
+            if not self.client and not self.deepseek_client:
+                cprint("❌ Cannot analyze whale movement - no AI clients initialized", "red")
+                cprint("   Please add ANTHROPIC_KEY or DEEPSEEK_KEY to your .env", "yellow")
+                return None
             # Get proper OHLCV data from Hyperliquid
             print("\n📊 Getting market data from Hyperliquid...")
             df = hl.get_data(

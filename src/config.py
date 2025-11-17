@@ -116,7 +116,9 @@ MIN_TRADES_LAST_HOUR = 2
 
 # Real-Time Clips Agent Settings 🎬
 REALTIME_CLIPS_ENABLED = True
-REALTIME_CLIPS_OBS_FOLDER = '/Volumes/Moon 26/OBS'  # Your OBS recording folder
+# Set this to your OBS recording folder path (leave as None to disable)
+# Example: '/path/to/your/OBS/recordings' or 'C:\\Users\\YourName\\Videos\\OBS'
+REALTIME_CLIPS_OBS_FOLDER = None  # Your OBS recording folder (CONFIGURE THIS!)
 REALTIME_CLIPS_AUTO_INTERVAL = 120  # Check every N seconds (120 = 2 minutes)
 REALTIME_CLIPS_LENGTH = 2  # Minutes to analyze per check
 REALTIME_CLIPS_AI_MODEL = 'groq'  # Model type: groq, openai, claude, deepseek, xai, ollama
@@ -133,6 +135,11 @@ HEDGE_MAX_POSITION_PCT = 50  # Maximum % of portfolio to use for hedging
 # Optional API Keys for Hedge Monitor
 # FRED_API_KEY - Get free key at https://fred.stlouisfed.org/docs/api/api_key.html
 # This enables macro monitoring (M2, Fed Balance Sheet, Bank Reserves)
+
+# CopyBot Agent Settings 🤖
+# Set this to the path of your copybot portfolio CSV file
+# Leave as None to use data from Moon Dev API instead
+COPYBOT_PORTFOLIO_PATH = None  # Path to current_portfolio.csv (CONFIGURE THIS if using local portfolio)
 
 # Future variables (not active yet) 🔮
 sell_at_multiple = 3

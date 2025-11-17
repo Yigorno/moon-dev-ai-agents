@@ -51,8 +51,18 @@ pathlib.Path(DATA_FOLDER).mkdir(parents=True, exist_ok=True)
 # Load environment variables
 load_dotenv()
 
-# Get OpenAI key for voice
-openai.api_key = os.getenv("OPENAI_KEY")
+# Get OpenAI key for voice - with graceful error handling
+openai_key = os.getenv("OPENAI_KEY")
+if openai_key:
+    try:
+        openai.api_key = openai_key
+        cprint("✅ OpenAI client initialized for voice announcements", "green")
+    except Exception as e:
+        cprint(f"❌ Failed to initialize OpenAI client: {e}", "red")
+        cprint("   Voice announcements will not work", "yellow")
+else:
+    cprint("⚠️ OPENAI_KEY not found in .env file", "yellow")
+    cprint("   Voice announcements will not work", "yellow")
 
 # Patch httpx
 original_client = httpx.Client
@@ -314,21 +324,32 @@ class SentimentAgent:
         try:
             if not os.path.exists("cookies.json"):
                 cprint("❌ No cookies.json found! Please run twitter_login.py first", "red")
-                sys.exit(1)
+                cprint("   Run: python src/scripts/twitter_login.py", "yellow")
+                self.client = None
+                return None
 
             cprint("🌙 Moon Dev's Sentiment Agent starting up...", "cyan")
-            client = Client()
-            client.load_cookies("cookies.json")
-            cprint("🚀 Moon Dev's cookies loaded successfully! Time to fly to the moon! 🌙", "green")
+            client = None
+            try:
+                client = Client()
+                client.load_cookies("cookies.json")
+                cprint("🚀 Moon Dev's cookies loaded successfully! Time to fly to the moon! 🌙", "green")
+            except Exception as e:
+                cprint(f"❌ Error loading Twitter cookies: {str(e)}", "red")
+                if os.path.exists("cookies.json"):
+                    os.remove("cookies.json")
+                    cprint("🗑️ Removed invalid cookies file", "yellow")
+                    cprint("🔄 Please run twitter_login.py again", "yellow")
+                self.client = None
+                return None
+
             return client
 
         except Exception as e:
-            cprint(f"❌ Error initializing client: {str(e)}", "red")
-            if os.path.exists("cookies.json"):
-                os.remove("cookies.json")
-                cprint("🗑️ Removed invalid cookies file", "yellow")
-                cprint("🔄 Please run twitter_login.py again", "yellow")
-            sys.exit(1)
+            cprint(f"❌ Error initializing Twitter client: {str(e)}", "red")
+            cprint("   Sentiment analysis will not work without valid Twitter credentials", "yellow")
+            self.client = None
+            return None
 
     async def get_tweets(self, query):
         """Get tweets with proper error handling"""
@@ -461,11 +482,17 @@ class SentimentAgent:
     async def run_async(self):
         """Async function to run sentiment analysis"""
         cprint("🤖 Moon Dev's Sentiment Analysis running...", "cyan")
-        
+
         # Initialize client if not already done
         if not self.client:
             self.client = self.init_twitter_client()
-        
+
+        # Check if client initialization failed
+        if not self.client:
+            cprint("❌ Cannot run sentiment analysis - Twitter client not initialized", "red")
+            cprint("   Please run: python src/scripts/twitter_login.py", "yellow")
+            return
+
         all_tweets = []
         for token in TOKENS_TO_TRACK:
             try:

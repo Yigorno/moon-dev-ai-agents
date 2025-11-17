@@ -111,9 +111,15 @@ class HedgeAgent(BaseAgent):
 
         load_dotenv()
 
-        # Initialize AI model
-        self.model = ModelFactory.create_model(AI_MODEL_PROVIDER)
-        print(f"🤖 Using AI Model: {AI_MODEL_PROVIDER}")
+        # Initialize AI model with error handling
+        try:
+            self.model = ModelFactory.create_model(AI_MODEL_PROVIDER)
+            print(f"🤖 Using AI Model: {AI_MODEL_PROVIDER}")
+        except Exception as e:
+            cprint(f"❌ Failed to initialize AI model: {e}", "red")
+            cprint("   Please check your API keys in .env file", "yellow")
+            cprint(f"   Required key for {AI_MODEL_PROVIDER}", "yellow")
+            raise
 
         # Create data directory
         self.data_dir = PROJECT_ROOT / "src" / "data" / "hedge_monitor"

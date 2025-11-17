@@ -19,8 +19,10 @@ AUTONOMOUS = True
 # TWITTER AUTO-POST: Set to True to open Twitter compose with title after each clip
 TWITTER = True
 
-# OBS Recording Folder
-OBS_FOLDER = '/Volumes/Moon 26/OBS'
+# OBS Recording Folder - now configured in config.py
+# If not set in config, will need to be configured before agent can run
+from src.config import REALTIME_CLIPS_OBS_FOLDER
+OBS_FOLDER = REALTIME_CLIPS_OBS_FOLDER  # Configure this in config.py!
 
 # Clips Output Folder (will be created in src/data/)
 CLIPS_BASE_FOLDER = 'realtime_clips'
@@ -163,13 +165,31 @@ class RealtimeClipsAgent:
     """AI-powered real-time clip creator using Moon Dev's Model Factory"""
 
     def __init__(self):
+        # Validate OBS folder configuration
+        if not OBS_FOLDER:
+            cprint("❌ ERROR: OBS_FOLDER not configured!", "red")
+            cprint("   Please set REALTIME_CLIPS_OBS_FOLDER in config.py", "yellow")
+            cprint("   Example: REALTIME_CLIPS_OBS_FOLDER = '/path/to/your/OBS/recordings'", "yellow")
+            sys.exit(1)
+
         self.obs_folder = Path(OBS_FOLDER)
+
+        if not self.obs_folder.exists():
+            cprint(f"⚠️  WARNING: OBS folder not found: {self.obs_folder}", "yellow")
+            cprint("   The agent will start, but cannot create clips until this folder exists.", "yellow")
+            cprint("   Please verify REALTIME_CLIPS_OBS_FOLDER in config.py", "yellow")
+
         self.base_clips_folder = DATA_DIR
         self.base_clips_folder.mkdir(exist_ok=True)
 
         # Initialize AI model via model factory
         cprint(f"\n🤖 Initializing AI model: {AI_MODEL_TYPE}", "cyan")
-        self.model = model_factory.get_model(AI_MODEL_TYPE, AI_MODEL_NAME)
+        try:
+            self.model = model_factory.get_model(AI_MODEL_TYPE, AI_MODEL_NAME)
+        except Exception as e:
+            cprint(f"❌ Failed to initialize AI model: {e}", "red")
+            cprint("   Please check your API keys in .env file", "yellow")
+            self.model = None
 
         if not self.model:
             cprint(f"❌ Failed to initialize {AI_MODEL_TYPE} model!", "red")

@@ -42,8 +42,9 @@ claude_client = Anthropic(
 TODAY_DATE = datetime.now().strftime("%m_%d_%Y")
 
 # Directory setup
-PROJECT_ROOT = Path(__file__).parent.parent
-DATA_DIR = PROJECT_ROOT / "data/rbi_v2"
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+DATA_PATH = PROJECT_ROOT / 'src' / 'data' / 'rbi' / 'BTC-USD-15m.csv'
+DATA_DIR = PROJECT_ROOT / "src/data/rbi_v2"
 TODAY_DIR = DATA_DIR / TODAY_DATE
 RESEARCH_DIR = TODAY_DIR / "research"
 BACKTEST_DIR = TODAY_DIR / "backtests"
@@ -99,7 +100,7 @@ Include:
 5. your size should be 1,000,000
 6. If you need indicators use TA lib or pandas TA.
 
-Use this data path: /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv
+Use this data path: {data_path}
 
 FOR THE PYTHON BACKTESTING LIBRARY USE BACKTESTING.PY AND SEND BACK ONLY THE CODE, NO OTHER TEXT.
 ONLY SEND BACK CODE, NO OTHER TEXT.
@@ -213,11 +214,13 @@ def research_strategy(content):
 def create_backtest(strategy, strategy_name="UnknownStrategy"):
     """Backtest AI: Creates backtest implementation using Claude Opus"""
     cprint("\n📊 Starting Backtest AI (Claude Opus)...", "cyan")
-    
+
+    backtest_prompt_formatted = BACKTEST_PROMPT.format(data_path=DATA_PATH)
+
     output = run_with_animation(
         chat_with_claude,
         "Backtest AI",
-        BACKTEST_PROMPT,
+        backtest_prompt_formatted,
         f"Create a backtest for this strategy:\n\n{strategy}",
         "claude-3-opus-20240229"  # Use Claude Opus for complex coding
     )

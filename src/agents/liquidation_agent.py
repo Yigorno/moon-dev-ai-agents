@@ -104,30 +104,65 @@ class LiquidationAgent(BaseAgent):
                 print(f"  - Max Tokens: {AI_MAX_TOKENS}")
                 
         load_dotenv()
-        
+
         # Get API keys
         openai_key = os.getenv("OPENAI_KEY")
         anthropic_key = os.getenv("ANTHROPIC_KEY")
         deepseek_key = os.getenv("DEEPSEEK_KEY")
-        
-        if not openai_key:
-            raise ValueError("🚨 OPENAI_KEY not found in environment variables!")
-        if not anthropic_key:
-            raise ValueError("🚨 ANTHROPIC_KEY not found in environment variables!")
-            
-        # Initialize OpenAI client for DeepSeek
-        if deepseek_key and MODEL_OVERRIDE.lower() == "deepseek-chat":
-            self.deepseek_client = openai.OpenAI(
-                api_key=deepseek_key,
-                base_url=DEEPSEEK_BASE_URL
-            )
-            print("🚀 DeepSeek model initialized!")
+
+        # Initialize clients with graceful error handling
+        self.client = None
+        self.deepseek_client = None
+
+        # Try to initialize OpenAI client for voice
+        if openai_key:
+            try:
+                openai.api_key = openai_key
+                cprint("✅ OpenAI client initialized for voice announcements", "green")
+            except Exception as e:
+                cprint(f"❌ Failed to initialize OpenAI client: {e}", "red")
+                cprint("   Please verify your OPENAI_KEY is valid", "yellow")
+                cprint("   Voice announcements will not work", "yellow")
         else:
-            self.deepseek_client = None
-            
-        # Initialize other clients
-        openai.api_key = openai_key
-        self.client = anthropic.Anthropic(api_key=anthropic_key)
+            cprint("⚠️ OPENAI_KEY not found in .env file", "yellow")
+            cprint("   Voice announcements will not work", "yellow")
+
+        # Try to initialize Anthropic client
+        if anthropic_key:
+            try:
+                self.client = anthropic.Anthropic(api_key=anthropic_key)
+                cprint("✅ Anthropic client initialized successfully!", "green")
+            except Exception as e:
+                cprint(f"❌ Failed to initialize Anthropic client: {e}", "red")
+                cprint("   Please verify your ANTHROPIC_KEY is valid", "yellow")
+                self.client = None
+        else:
+            cprint("⚠️ ANTHROPIC_KEY not found in .env file", "yellow")
+            cprint("   Liquidation Agent will not be able to use Claude models", "yellow")
+
+        # Try to initialize DeepSeek client if configured
+        if MODEL_OVERRIDE.lower() == "deepseek-chat":
+            if deepseek_key:
+                try:
+                    self.deepseek_client = openai.OpenAI(
+                        api_key=deepseek_key,
+                        base_url=DEEPSEEK_BASE_URL
+                    )
+                    cprint("🚀 DeepSeek model initialized!", "green")
+                except Exception as e:
+                    cprint(f"❌ Failed to initialize DeepSeek client: {e}", "red")
+                    cprint("   Please verify your DEEPSEEK_KEY is valid", "yellow")
+                    self.deepseek_client = None
+            else:
+                cprint("⚠️ DEEPSEEK_KEY not found in .env file", "yellow")
+                cprint("   MODEL_OVERRIDE is set to deepseek-chat but no API key available", "yellow")
+                self.deepseek_client = None
+
+        # Check if we have at least one working AI client
+        if not self.client and not self.deepseek_client:
+            cprint("❌ WARNING: No AI clients initialized successfully!", "red")
+            cprint("   Liquidation Agent needs either ANTHROPIC_KEY or DEEPSEEK_KEY", "yellow")
+            cprint("   Add them to your .env file to enable liquidation analysis", "yellow")
         
         self.api = MoonDevAPI()
         
@@ -284,6 +319,11 @@ class LiquidationAgent(BaseAgent):
     def _analyze_opportunity(self, current_longs, current_shorts, previous_longs, previous_shorts):
         """Get AI analysis of the liquidation event"""
         try:
+            # Check if we have AI clients available
+            if not self.client and not self.deepseek_client:
+                cprint("❌ Cannot analyze liquidation event - no AI clients initialized", "red")
+                cprint("   Please add ANTHROPIC_KEY or DEEPSEEK_KEY to your .env", "yellow")
+                return None
             # Calculate percentage changes
             pct_change_longs = ((current_longs - previous_longs) / previous_longs) * 100 if previous_longs > 0 else 0
             pct_change_shorts = ((current_shorts - previous_shorts) / previous_shorts) * 100 if previous_shorts > 0 else 0

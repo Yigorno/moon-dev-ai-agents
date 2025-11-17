@@ -456,28 +456,49 @@ class TradingAgent:
         # Check if using swarm mode or single model
         if USE_SWARM_MODE:
             cprint(f"\n🌊 Initializing Trading Agent in SWARM MODE (6 AI consensus)...", "cyan", attrs=['bold'])
-            self.swarm = SwarmAgent()
-            cprint("✅ Swarm mode initialized with 6 AI models!", "green")
+            try:
+                self.swarm = SwarmAgent()
+                cprint("✅ Swarm mode initialized with 6 AI models!", "green")
+            except Exception as e:
+                cprint(f"❌ Failed to initialize Swarm: {e}", "red")
+                cprint("   Please verify your API keys are set correctly", "yellow")
+                self.swarm = None
 
             # Still need a lightweight model for portfolio allocation (not trading decisions)
             cprint("💼 Initializing fast model for portfolio calculations...", "cyan")
-            self.model = model_factory.get_model(AI_MODEL_TYPE, AI_MODEL_NAME)
-            if self.model:
-                cprint(f"✅ Allocation model ready: {self.model.model_name}", "green")
+            try:
+                self.model = model_factory.get_model(AI_MODEL_TYPE, AI_MODEL_NAME)
+                if self.model:
+                    cprint(f"✅ Allocation model ready: {self.model.model_name}", "green")
+                else:
+                    cprint(f"⚠️ Could not initialize {AI_MODEL_TYPE} model", "yellow")
+                    cprint("   Check if API key for that model is configured", "yellow")
+                    self.model = None
+            except Exception as e:
+                cprint(f"❌ Error initializing allocation model: {e}", "red")
+                cprint("   Portfolio allocation will not be available", "yellow")
+                self.model = None
         else:
             # Initialize AI model via model factory (original behavior)
             cprint(f"\n🤖 Initializing Trading Agent with {AI_MODEL_TYPE} model...", "cyan")
-            self.model = model_factory.get_model(AI_MODEL_TYPE, AI_MODEL_NAME)
-            self.swarm = None  # Not used in single model mode
+            try:
+                self.model = model_factory.get_model(AI_MODEL_TYPE, AI_MODEL_NAME)
+                self.swarm = None  # Not used in single model mode
 
-            if not self.model:
-                cprint(f"❌ Failed to initialize {AI_MODEL_TYPE} model!", "red")
-                cprint("Available models:", "yellow")
-                for model_type in model_factory._models.keys():
-                    cprint(f"  - {model_type}", "yellow")
-                sys.exit(1)
-
-            cprint(f"✅ Using model: {self.model.model_name}", "green")
+                if not self.model:
+                    cprint(f"⚠️ Could not initialize {AI_MODEL_TYPE} model!", "yellow")
+                    cprint("Available models:", "cyan")
+                    for model_type in model_factory._models.keys():
+                        cprint(f"  - {model_type}", "cyan")
+                    cprint("\nPlease check your .env file for missing API keys", "yellow")
+                    self.model = None
+                else:
+                    cprint(f"✅ Using model: {self.model.model_name}", "green")
+            except Exception as e:
+                cprint(f"❌ Error initializing model: {e}", "red")
+                cprint("   Please verify your API keys are set correctly in .env", "yellow")
+                self.model = None
+                self.swarm = None
 
         self.recommendations_df = pd.DataFrame(columns=['token', 'action', 'confidence', 'reasoning'])
 
@@ -511,6 +532,11 @@ class TradingAgent:
     def chat_with_ai(self, system_prompt, user_content):
         """Send prompt to AI model via model factory"""
         try:
+            if not self.model:
+                cprint(f"❌ AI model not initialized - cannot generate response", "red")
+                cprint("   Please check your API key configuration in .env", "yellow")
+                return None
+
             response = self.model.generate_response(
                 system_prompt=system_prompt,
                 user_content=user_content,
@@ -525,6 +551,7 @@ class TradingAgent:
 
         except Exception as e:
             cprint(f"❌ AI model error: {e}", "red")
+            cprint("   Check your API configuration and internet connection", "yellow")
             return None
 
     def _format_market_data_for_swarm(self, token, market_data):

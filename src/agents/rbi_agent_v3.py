@@ -63,7 +63,9 @@ AI_MAX_TOKENS = 4000
 
 # Import model factory with proper path handling
 import sys
-sys.path.append('/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading')
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+DATA_PATH = PROJECT_ROOT / 'src' / 'data' / 'rbi' / 'BTC-USD-15m.csv'
 
 try:
     from src.models import model_factory
@@ -242,7 +244,7 @@ RISK MANAGEMENT:
 
 If you need indicators use TA lib or pandas TA. 
 
-Use this data path: /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv
+Use this data path: {data_path}
 the above data head looks like below
 datetime, open, high, low, close, volume,
 2023-01-01 00:00:00, 16531.83, 16532.69, 16509.11, 16510.82, 231.05338022,
@@ -259,10 +261,17 @@ At the VERY END of your code (after all strategy definitions), you MUST add this
 if __name__ == "__main__":
     import sys
     import os
+    from pathlib import Path
 
     # Import the multi-data tester from Moon Dev's trading bots repo
-    sys.path.append('/Users/md/Dropbox/dev/github/moon-dev-trading-bots/backtests')
-    from multi_data_tester import test_on_all_data
+    # Updated to use relative path from project root
+    multi_data_path = Path(__file__).parent.parent.parent / 'backtests'
+    if multi_data_path.exists():
+        sys.path.insert(0, str(multi_data_path))
+    try:
+        from multi_data_tester import test_on_all_data
+    except ImportError:
+        test_on_all_data = None
 
     print("\\n" + "="*80)
     print("🚀 MOON DEV'S MULTI-DATA BACKTEST - Testing on 25+ Data Sources!")
@@ -270,7 +279,10 @@ if __name__ == "__main__":
 
     # Test this strategy on all configured data sources
     # This will test on: BTC, ETH, SOL (multiple timeframes), AAPL, TSLA, ES, NQ, GOOG, NVDA
-    results = test_on_all_data(YourStrategyClassName, 'YourStrategyName')
+    if test_on_all_data is not None:
+        results = test_on_all_data(YourStrategyClassName, 'YourStrategyName')
+    else:
+        results = None
 
     if results is not None:
         print("\\n✅ Multi-data testing complete! Results saved in ./results/ folder")
@@ -747,11 +759,13 @@ def research_strategy(content):
 def create_backtest(strategy, strategy_name="UnknownStrategy"):
     """Backtest AI: Creates backtest implementation"""
     cprint("\n📊 Starting Backtest AI...", "cyan")
-    
+
+    backtest_prompt_formatted = BACKTEST_PROMPT.format(data_path=DATA_PATH)
+
     output = run_with_animation(
         chat_with_model,
         "Backtest AI",
-        BACKTEST_PROMPT,
+        backtest_prompt_formatted,
         f"Create a backtest for this strategy:\n\n{strategy}",
         BACKTEST_CONFIG
     )

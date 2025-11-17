@@ -42,8 +42,10 @@ AI_TEMPERATURE = 0.7
 AI_MAX_TOKENS = 4000
 
 # Import model factory with proper path handling
-import sys
-sys.path.append('/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading')
+# Project root path (dynamic, works on any machine)
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+DATA_PATH = PROJECT_ROOT / 'src' / 'data' / 'rbi' / 'BTC-USD-15m.csv'
 
 try:
     from src.models import model_factory
@@ -202,9 +204,9 @@ RISK MANAGEMENT:
 2. Use proper stop loss and take profit calculations
 4. Print entry/exit signals with Moon Dev themed messages
 
-If you need indicators use TA lib or pandas TA. 
+If you need indicators use TA lib or pandas TA.
 
-Use this data path: /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv
+Use this data path: {data_path}
 the above data head looks like below
 datetime, open, high, low, close, volume,
 2023-01-01 00:00:00, 16531.83, 16532.69, 16509.11, 16510.82, 231.05338022,
@@ -609,7 +611,7 @@ def create_backtest(strategy, strategy_name="UnknownStrategy"):
     output = run_with_animation(
         chat_with_model,
         "Backtest AI",
-        BACKTEST_PROMPT,
+        BACKTEST_PROMPT.format(data_path=DATA_PATH),  # Format with dynamic data path
         f"Create a backtest for this strategy:\n\n{strategy}",
         BACKTEST_CONFIG
     )

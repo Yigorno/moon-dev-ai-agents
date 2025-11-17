@@ -33,7 +33,7 @@ NEW FEATURES:
 Required Setup:
 1. Conda environment 'tflow' with backtesting packages
 2. Set MAX_PARALLEL_THREADS (default: 5)
-3. Multi-data tester at: /Users/md/Dropbox/dev/github/moon-dev-trading-bots/backtests/multi_data_tester.py
+3. Multi-data tester at: PROJECT_ROOT/backtests/multi_data_tester.py
 4. Run and watch all ideas process in parallel with multi-data validation! 🚀💰
 
 IMPORTANT: Each thread is fully independent and won't interfere with others!
@@ -84,7 +84,9 @@ AI_MAX_TOKENS = 8000  # 🌙 Moon Dev: Set to 8000 for DeepSeek compatibility (m
 
 # Import model factory with proper path handling
 import sys
-sys.path.append(r"G:\Drive'ım\Moondev_AI_agents\moon-dev-ai-agents")
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+DATA_PATH = PROJECT_ROOT / 'src' / 'data' / 'rbi' / 'BTC-USD-15m.csv'
 
 try:
     from src.models import model_factory
@@ -520,7 +522,7 @@ RISK MANAGEMENT:
 
 If you need indicators use TA lib or pandas TA.
 
-Use this data path: G:/Drive'ım/Moondev_AI_agents/moon-dev-ai-agents/src/data/rbi/BTC-USD-15m.csv
+Use this data path: {data_path}
 the above data head looks like below
 datetime, open, high, low, close, volume,
 2023-01-01 00:00:00, 16531.83, 16532.69, 16509.11, 16510.82, 231.05338022,
@@ -546,7 +548,9 @@ if __name__ == "__main__":
 
     # FIRST: Run standard backtest and print stats (REQUIRED for parsing!)
     print("\\n🌙 Running initial backtest for stats extraction...")
-    data = pd.read_csv('G:/Drive\\'ım/Moondev_AI_agents/moon-dev-ai-agents/src/data/rbi/BTC-USD-15m.csv')
+    from pathlib import Path
+    DATA_PATH = Path(__file__).parent.parent.parent / 'src' / 'data' / 'rbi' / 'BTC-USD-15m.csv'
+    data = pd.read_csv(str(DATA_PATH))
     data['datetime'] = pd.to_datetime(data['datetime'])
     data = data.set_index('datetime')
     data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
@@ -562,8 +566,13 @@ if __name__ == "__main__":
     print("="*80 + "\\n")
 
     # THEN: Run multi-data testing
-    sys.path.append('/Users/md/Dropbox/dev/github/moon-dev-trading-bots/backtests')
-    from multi_data_tester import test_on_all_data
+    multi_data_path = Path(__file__).parent.parent.parent / 'backtests'
+    if multi_data_path.exists():
+        sys.path.insert(0, str(multi_data_path))
+    try:
+        from multi_data_tester import test_on_all_data
+    except ImportError:
+        test_on_all_data = None
 
     print("\\n" + "="*80)
     print("🚀 MOON DEV'S MULTI-DATA BACKTEST - Testing on 25+ Data Sources!")
@@ -572,7 +581,10 @@ if __name__ == "__main__":
     # Test this strategy on all configured data sources
     # This will test on: BTC, ETH, SOL (multiple timeframes), AAPL, TSLA, ES, NQ, GOOG, NVDA
     # IMPORTANT: verbose=False to prevent plotting (causes timeouts in parallel processing!)
-    results = test_on_all_data(YourStrategyClassName, 'YourStrategyName', verbose=False)
+    if test_on_all_data is not None:
+        results = test_on_all_data(YourStrategyClassName, 'YourStrategyName', verbose=False)
+    else:
+        results = None
 
     if results is not None:
         print("\\n✅ Multi-data testing complete! Results saved in ./results/ folder")
@@ -1238,8 +1250,10 @@ def create_backtest(strategy, strategy_name, thread_id):
     """Backtest AI: Creates backtest implementation"""
     thread_print_status(thread_id, "📊 BACKTEST", "Creating backtest code...")
 
+    backtest_prompt_formatted = BACKTEST_PROMPT.format(data_path=DATA_PATH)
+
     output = chat_with_model(
-        BACKTEST_PROMPT,
+        backtest_prompt_formatted,
         f"Create a backtest for this strategy:\n\n{strategy}",
         BACKTEST_CONFIG,
         thread_id

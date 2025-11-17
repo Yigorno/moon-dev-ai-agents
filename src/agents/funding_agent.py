@@ -102,34 +102,65 @@ class FundingAgent(BaseAgent):
         self.active_model = MODEL_OVERRIDE if MODEL_OVERRIDE != "0" else config.AI_MODEL
         
         load_dotenv()
-        
-        # Initialize OpenAI client for voice only
+
+        # Initialize clients with graceful error handling
+        self.anthropic_client = None
+        self.deepseek_client = None
+
+        # Try to initialize OpenAI client for voice only
         openai_key = os.getenv("OPENAI_KEY")
-        if not openai_key:
-            raise ValueError("🚨 OPENAI_KEY not found in environment variables!")
-        openai.api_key = openai_key
-        
-        # Initialize Anthropic for Claude models
+        if openai_key:
+            try:
+                openai.api_key = openai_key
+                cprint("✅ OpenAI client initialized for voice announcements", "green")
+            except Exception as e:
+                cprint(f"❌ Failed to initialize OpenAI client: {e}", "red")
+                cprint("   Please verify your OPENAI_KEY is valid", "yellow")
+                cprint("   Voice announcements will not work", "yellow")
+        else:
+            cprint("⚠️ OPENAI_KEY not found in .env file", "yellow")
+            cprint("   Voice announcements will not work", "yellow")
+
+        # Try to initialize Anthropic for Claude models
         anthropic_key = os.getenv("ANTHROPIC_KEY")
-        if not anthropic_key:
-            raise ValueError("🚨 ANTHROPIC_KEY not found in environment variables!")
-        self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
-        
-        # Initialize DeepSeek client if needed
+        if anthropic_key:
+            try:
+                self.anthropic_client = anthropic.Anthropic(api_key=anthropic_key)
+                cprint("✅ Anthropic client initialized successfully!", "green")
+            except Exception as e:
+                cprint(f"❌ Failed to initialize Anthropic client: {e}", "red")
+                cprint("   Please verify your ANTHROPIC_KEY is valid", "yellow")
+                self.anthropic_client = None
+        else:
+            cprint("⚠️ ANTHROPIC_KEY not found in .env file", "yellow")
+            cprint("   Funding Agent will not be able to use Claude models", "yellow")
+
+        # Try to initialize DeepSeek client if configured
         if "deepseek" in self.active_model.lower():
             deepseek_key = os.getenv("DEEPSEEK_KEY")
             if deepseek_key:
-                self.deepseek_client = openai.OpenAI(
-                    api_key=deepseek_key,
-                    base_url=DEEPSEEK_BASE_URL
-                )
-                cprint("🚀 Moon Dev's Funding Agent using DeepSeek override!", "green")
+                try:
+                    self.deepseek_client = openai.OpenAI(
+                        api_key=deepseek_key,
+                        base_url=DEEPSEEK_BASE_URL
+                    )
+                    cprint("🚀 Moon Dev's Funding Agent using DeepSeek override!", "green")
+                except Exception as e:
+                    cprint(f"❌ Failed to initialize DeepSeek client: {e}", "red")
+                    cprint("   Please verify your DEEPSEEK_KEY is valid", "yellow")
+                    self.deepseek_client = None
             else:
+                cprint("⚠️ DEEPSEEK_KEY not found in .env file", "yellow")
+                cprint("   ai_model is set to deepseek but no API key available", "yellow")
                 self.deepseek_client = None
-                cprint("⚠️ DEEPSEEK_KEY not found - DeepSeek model will not be available", "yellow")
         else:
-            self.deepseek_client = None
             cprint(f"🎯 Moon Dev's Funding Agent using Claude model: {self.active_model}!", "green")
+
+        # Check if we have at least one working AI client
+        if not self.anthropic_client and not self.deepseek_client:
+            cprint("❌ WARNING: No AI clients initialized successfully!", "red")
+            cprint("   Funding Agent needs either ANTHROPIC_KEY or DEEPSEEK_KEY", "yellow")
+            cprint("   Add them to your .env file to enable funding analysis", "yellow")
         
         self.api = MoonDevAPI()
         
@@ -150,6 +181,11 @@ class FundingAgent(BaseAgent):
     def _analyze_opportunity(self, symbol, funding_data, market_data):
         """Get AI analysis of the opportunity"""
         try:
+            # Check if we have AI clients available
+            if not self.anthropic_client and not self.deepseek_client:
+                cprint("❌ Cannot analyze funding opportunity - no AI clients initialized", "red")
+                cprint("   Please add ANTHROPIC_KEY or DEEPSEEK_KEY to your .env", "yellow")
+                return None
             # Debug print raw funding rate
             rate = funding_data['annual_rate'].iloc[0]
             print(f"\n🔍 Raw funding rate for {symbol}: {rate:.2f}%")
